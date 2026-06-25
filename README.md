@@ -8,6 +8,8 @@
 
 Where Pythia speaks for OpenAI, Sibyl speaks for Gemini. One MCP across the whole generative surface: text, image, video, speech, embeddings, and deep research. Built for personal use, shared openly, not productised.
 
+<br/>
+
 <a href="https://www.buymeacoffee.com/hello_emrah"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=hello_emrah&button_colour=2E7D74&font_colour=ffffff&coffee_colour=ffffff&outline_colour=ffffff&font_family=Inter" alt="Buy me a coffee" height="44" /></a>
 
 </div>
