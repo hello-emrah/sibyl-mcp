@@ -63,6 +63,16 @@ npm install
 | `GEMINI_TEXT_MODEL` / `GEMINI_IMAGE_MODEL` / `GEMINI_VIDEO_MODEL` / `GEMINI_TTS_MODEL` / `GEMINI_EMBED_MODEL` | Optional model overrides; sensible current defaults otherwise. |
 | `SIBYL_OUTPUT_DIR` | Where research reports and embedding files land by default. |
 
+## Why "Sibyl"
+
+The Sibyl was the prophetess of the ancient world, an oracle with no temple of her own, a wandering voice of foresight who spoke the future in riddles. She is the twin to the Pythia: where Pythia spoke for Apollo at Delphi, Sibyl speaks for Gemini here. Fitting that the Gemini API, named for the twins, should fall to the oracle's twin.
+
+## Design philosophy
+
+The visual mark and the tool itself were built deliberately against the visual language of capitalist software design. No gradients, no neon, no glass, no drop shadows, no isometric stock illustration. Single-shade flat seals in warm, considered colours, ancient-glyph silhouettes, generous whitespace. The mark could be pressed into wax or carved into stone.
+
+This tool is built for personal use and shared openly. It is not productised, monetised, or instrumented. Use it for your own work or fork it for yours.
+
 ## License
 
 MIT.
