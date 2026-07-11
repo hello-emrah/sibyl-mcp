@@ -66,6 +66,32 @@ export async function deepResearch({ prompt, format = 'report', citation_style =
   return { interaction_id: interaction.id, status: interaction.status, format, citation_style, tone, message: 'Research started. Call research_get with this interaction_id every 60 seconds until status is "completed".' };
 }
 
+// The interactions API has carried the report in two shapes: originally as
+// interaction.outputs (last element's text was the whole report), and since
+// mid-2026 as interaction.steps, where the text is spread across every
+// model_output step's text content items (interaction.output_text holds only
+// the final chunk, so it is not enough). Assemble steps first, fall back to
+// outputs, and fail loudly rather than saving an empty report as a success.
+function extractReportText(interaction) {
+  const fromSteps = (interaction.steps || [])
+    .filter((s) => s.type === 'model_output')
+    .flatMap((s) => s.content || [])
+    .filter((c) => c.type === 'text' && typeof c.text === 'string')
+    .map((c) => c.text)
+    .join('');
+  if (fromSteps.trim()) return fromSteps;
+  const legacy = interaction.outputs?.[interaction.outputs.length - 1]?.text ?? '';
+  if (legacy.trim()) return legacy;
+  throw new Error('Research completed but no report text was found on the interaction. The API response shape may have changed; inspect interaction.steps.');
+}
+
+function countImages(interaction) {
+  return (interaction.steps || [])
+    .filter((s) => s.type === 'model_output')
+    .flatMap((s) => s.content || [])
+    .filter((c) => c.type === 'image').length;
+}
+
 export async function researchGet({ interaction_id, prompt, format = 'report', citation_style = 'harvard', tone = 'analytical', output_filename, output_dir } = {}) {
   if (!interaction_id) throw new Error('interaction_id is required');
   if (!prompt) throw new Error('prompt is required (for the filename and frontmatter)');
@@ -73,7 +99,7 @@ export async function researchGet({ interaction_id, prompt, format = 'report', c
   if (interaction.status === 'in_progress') return { status: 'in_progress', interaction_id, message: 'Still researching. Poll again in 60 seconds.' };
   if (interaction.status === 'failed') throw new Error(interaction.error || 'Research failed.');
   if (interaction.status === 'completed') {
-    const reportText = interaction.outputs?.[interaction.outputs.length - 1]?.text ?? '';
+    const reportText = extractReportText(interaction);
     const stamp = new Date().toISOString().slice(0, 10);
     const fm = frontmatter({ prompt, format, citationStyle: citation_style, tone, interactionId: interaction_id, stamp });
     const filename = generateFilename(prompt, output_filename, stamp);
@@ -81,7 +107,9 @@ export async function researchGet({ interaction_id, prompt, format = 'report', c
     mkdirSync(outDir, { recursive: true });
     const filepath = join(outDir, filename);
     writeFileSync(filepath, fm + reportText, 'utf8');
-    return { status: 'completed', interaction_id, file: filepath, message: `Report saved to ${filepath}` };
+    const images = countImages(interaction);
+    const imageNote = images ? ` The research also generated ${images} chart image(s); they are not saved by this tool but can be read from interaction.steps via the API.` : '';
+    return { status: 'completed', interaction_id, file: filepath, message: `Report saved to ${filepath} (${reportText.length} chars).${imageNote}` };
   }
   return { status: interaction.status, interaction_id };
 }
@@ -89,7 +117,12 @@ export async function researchGet({ interaction_id, prompt, format = 'report', c
 export async function researchFollowup({ prompt, previous_interaction_id } = {}) {
   if (!prompt || !previous_interaction_id) throw new Error('prompt and previous_interaction_id are required');
   const interaction = await researchAi.interactions.create({ input: prompt, model: MODELS.text, previous_interaction_id });
-  const text = interaction.outputs?.[interaction.outputs.length - 1]?.text ?? JSON.stringify(interaction, null, 2);
+  let text;
+  try {
+    text = extractReportText(interaction);
+  } catch {
+    text = interaction.output_text || JSON.stringify(interaction, null, 2);
+  }
   return { text };
 }
 
